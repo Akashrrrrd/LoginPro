@@ -46,20 +46,7 @@ export default function Home() {
         }} />
       </div>
 
-      {/* Starfield background effect */}
-      <div className="fixed inset-0 pointer-events-none opacity-10">
-        {[...Array(20)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute w-px h-px bg-emerald-400 rounded-full"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animation: `pulse ${2 + Math.random() * 2}s infinite`
-            }}
-          />
-        ))}
-      </div>
+      {/* Starfield background effect - removed to fix hydration */}
 
       <div className="relative z-10">
         {/* Header with logo and status */}

@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
@@ -6,17 +6,18 @@ import './globals.css'
 const _geistSans = Geist({ subsets: ['latin'] })
 const _geistMono = Geist_Mono({ subsets: ['latin'] })
 
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover'
+}
+
 export const metadata: Metadata = {
-  title: 'LogicLens Pro - Universal Visual Logic Solver',
-  description: 'AI-powered visual matrix reasoning puzzle solver with real-time AR overlay',
+  title: 'LogicLens Pro - Camera Matrix Solver',
+  description: 'AI-powered visual matrix reasoning puzzle solver with real-time camera scanning',
   generator: 'v0.app',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-    viewportFit: 'cover'
-  },
   icons: {
     icon: [
       {
