@@ -1,0 +1,74 @@
+@import 'tailwindcss';
+
+@theme inline {
+  --font-sans: 'Geist', 'Geist Fallback';
+  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+}
+
+@layer base {
+  body {
+    @apply bg-gray-950 text-gray-100;
+  }
+}
+
+/* Cyberpunk animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  }
+}
+
+@keyframes scan-lines {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: translateY(10px);
+  }
+}
+
+@keyframes glitch {
+  0%, 100% {
+    text-shadow: 0 0 0 transparent;
+  }
+  20% {
+    text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff;
+  }
+  40% {
+    text-shadow: -2px 0 #ff00ff;
+  }
+  60% {
+    text-shadow: 2px 0 #00ffff;
+  }
+  80% {
+    text-shadow: -2px 0 #ff00ff, 2px 0 #00ffff;
+  }
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.scan-lines {
+  animation: scan-lines 6s linear infinite;
+}
+
+.glitch {
+  animation: glitch 4s infinite;
+}
+
+/* Terminal text effect */
+.terminal-text {
+  @apply font-mono text-emerald-400;
+  text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+/* Glass effect */
+.glass {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 136, 0.1);
+}
