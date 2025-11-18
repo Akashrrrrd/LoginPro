@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Camera, Upload, X } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 
 interface CameraCaptureProps {
   onImageCapture: (imageData: string) => void;
@@ -10,14 +10,17 @@ interface CameraCaptureProps {
 export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
 
   const startCamera = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }
+        video: { 
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
@@ -25,7 +28,7 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
       }
     } catch (error) {
       console.error('Camera access denied:', error);
-      alert('Camera access denied. Please use image upload instead.');
+      alert('Camera access denied. Please allow camera permissions to scan puzzles.');
     }
   };
 
@@ -36,7 +39,7 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
         canvasRef.current.width = videoRef.current.videoWidth;
         canvasRef.current.height = videoRef.current.videoHeight;
         ctx.drawImage(videoRef.current, 0, 0);
-        const imageData = canvasRef.current.toDataURL('image/jpeg');
+        const imageData = canvasRef.current.toDataURL('image/jpeg', 0.95);
         setCapturedImage(imageData);
         onImageCapture(imageData);
         stopCamera();
@@ -49,19 +52,6 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
       const tracks = (videoRef.current.srcObject as MediaStream).getTracks();
       tracks.forEach(track => track.stop());
       setIsStreaming(false);
-    }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const imageData = event.target?.result as string;
-        setCapturedImage(imageData);
-        onImageCapture(imageData);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
@@ -96,8 +86,22 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
             playsInline
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 border-4 border-emerald-400/30 pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-emerald-400/5 via-transparent to-transparent pointer-events-none" />
+          {/* Grid overlay for alignment */}
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 border-4 border-emerald-400/30" />
+            <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
+              {[...Array(9)].map((_, i) => (
+                <div key={i} className="border border-emerald-400/10" />
+              ))}
+            </div>
+          </div>
+          
+          {/* Scan instruction */}
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/70 rounded-lg">
+            <p className="text-emerald-400 font-mono text-xs text-center">
+              Align puzzle grid within frame
+            </p>
+          </div>
           
           <button
             onClick={captureFrame}
@@ -119,31 +123,23 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <button
         onClick={startCamera}
-        className="w-full py-6 border-2 border-dashed border-emerald-500/50 hover:border-emerald-500 rounded-lg bg-gray-900/50 hover:bg-gray-900 transition-all flex items-center justify-center gap-3 text-emerald-400 font-mono text-sm"
+        className="w-full py-8 border-2 border-dashed border-emerald-500/50 hover:border-emerald-500 rounded-lg bg-gray-900/50 hover:bg-gray-900 transition-all flex flex-col items-center justify-center gap-4 text-emerald-400 font-mono"
       >
-        <Camera className="w-6 h-6" />
-        START CAMERA
+        <Camera className="w-12 h-12" />
+        <div className="text-center">
+          <p className="text-lg font-bold">SCAN PUZZLE</p>
+          <p className="text-xs text-emerald-300/60 mt-1">Camera-only mode for system-generated matrices</p>
+        </div>
       </button>
 
-      <label>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-        <button
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full py-4 border border-emerald-500/30 hover:border-emerald-500 rounded-lg bg-gray-900/30 hover:bg-gray-900/50 transition-all flex items-center justify-center gap-3 text-emerald-300 font-mono text-sm"
-        >
-          <Upload className="w-5 h-5" />
-          UPLOAD IMAGE
-        </button>
-      </label>
+      <div className="bg-gray-900/30 border border-emerald-500/20 rounded-lg p-4">
+        <p className="text-emerald-300/70 font-mono text-xs text-center">
+          📱 Position your device camera over a printed or digital puzzle matrix (3x3, 4x4, or 5x5)
+        </p>
+      </div>
 
       <canvas ref={canvasRef} className="hidden" />
     </div>

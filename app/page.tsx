@@ -63,14 +63,14 @@ export default function Home() {
 
       <div className="relative z-10">
         {/* Header with logo and status */}
-        <header className="border-b border-emerald-500/20 bg-gray-950/50 backdrop-blur-sm sticky top-0">
+        <header className="border-b border-emerald-500/20 bg-gray-950/50 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl mx-auto px-4 py-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <div className="w-3 h-3 bg-emerald-400 rounded-full animate-pulse" />
                 <div>
                   <h1 className="text-3xl font-bold text-emerald-400 font-mono tracking-wider">LOGIC LENS PRO</h1>
-                  <p className="text-xs text-emerald-300/60 font-mono mt-1">Universal Visual Logic Solver v1.0</p>
+                  <p className="text-xs text-emerald-300/60 font-mono mt-1">Camera-Based Matrix Reasoning Solver v1.0</p>
                 </div>
               </div>
               {solution && (
@@ -116,11 +116,16 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="border-t border-emerald-500/20 bg-gray-950/50 mt-12 py-4">
-          <div className="max-w-7xl mx-auto px-4 text-center">
-            <p className="text-emerald-300/40 font-mono text-xs">
-              LogicLens Pro • AI Matrix Reasoning Solver • v1.0
-            </p>
+        <footer className="border-t border-emerald-500/20 bg-gray-950/50 mt-12 py-6">
+          <div className="max-w-7xl mx-auto px-4">
+            <div className="text-center space-y-2">
+              <p className="text-emerald-300/40 font-mono text-xs">
+                LogicLens Pro • Camera-Based Matrix Reasoning Solver • v1.0
+              </p>
+              <p className="text-emerald-300/30 font-mono text-xs">
+                Supports 3x3, 4x4, and 5x5 system-generated puzzles only
+              </p>
+            </div>
           </div>
         </footer>
       </div>
