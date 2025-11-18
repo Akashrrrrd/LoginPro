@@ -12,23 +12,75 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const startCamera = async () => {
+    setError(null);
+    
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 1920 },
-          height: { ideal: 1080 }
-        }
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setIsStreaming(true);
+      // Check if mediaDevices is supported
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const msg = 'Camera not supported. Please use HTTPS or a modern browser.';
+        setError(msg);
+        alert(msg);
+        return;
       }
-    } catch (error) {
-      console.error('Camera access denied:', error);
-      alert('Camera access denied. Please allow camera permissions to scan puzzles.');
+
+      // Try with high quality first, fallback to basic if fails
+      let stream: MediaStream | null = null;
+      
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        });
+      } catch (e) {
+        // Fallback to basic constraints for mobile
+        console.log('High quality failed, trying basic constraints...');
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { 
+            facingMode: 'environment'
+          }
+        });
+      }
+      
+      if (videoRef.current && stream) {
+        videoRef.current.srcObject = stream;
+        
+        // Wait for video to be ready
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            setIsStreaming(true);
+          }).catch((playError) => {
+            console.error('Play error:', playError);
+            setError('Failed to start video playback');
+          });
+        };
+      }
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      
+      let errorMessage = 'Camera access failed. ';
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage += 'Please allow camera permissions in your browser settings.';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage += 'No camera found on this device.';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage += 'Camera is already in use by another app.';
+      } else if (error.name === 'OverconstrainedError') {
+        errorMessage += 'Camera does not support the requested settings.';
+      } else if (error.name === 'NotSupportedError') {
+        errorMessage += 'Camera not supported. Please use HTTPS.';
+      } else {
+        errorMessage += error.message || 'Unknown error occurred.';
+      }
+      
+      setError(errorMessage);
+      alert(errorMessage);
     }
   };
 
@@ -126,7 +178,7 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
     <div className="space-y-4">
       <button
         onClick={startCamera}
-        className="w-full py-8 border-2 border-dashed border-emerald-500/50 hover:border-emerald-500 rounded-lg bg-gray-900/50 hover:bg-gray-900 transition-all flex flex-col items-center justify-center gap-4 text-emerald-400 font-mono"
+        className="w-full py-8 border-2 border-dashed border-emerald-500/50 hover:border-emerald-500 active:border-emerald-400 rounded-lg bg-gray-900/50 hover:bg-gray-900 active:bg-gray-800 transition-all flex flex-col items-center justify-center gap-4 text-emerald-400 font-mono touch-manipulation"
       >
         <Camera className="w-12 h-12" />
         <div className="text-center">
@@ -135,9 +187,20 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
         </div>
       </button>
 
+      {error && (
+        <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
+          <p className="text-red-300 font-mono text-xs text-center">
+            ⚠️ {error}
+          </p>
+        </div>
+      )}
+
       <div className="bg-gray-900/30 border border-emerald-500/20 rounded-lg p-4">
         <p className="text-emerald-300/70 font-mono text-xs text-center">
           📱 Position your device camera over a printed or digital puzzle matrix (3x3, 4x4, or 5x5)
+        </p>
+        <p className="text-emerald-300/50 font-mono text-xs text-center mt-2">
+          ⚠️ Requires HTTPS connection for camera access
         </p>
       </div>
 
