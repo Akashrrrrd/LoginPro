@@ -59,11 +59,11 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
           video: { 
-            facingMode: 'environment'
+            facingMode: 'environment'  // 'environment' = back camera, 'user' = front camera
           }
         });
-        setDebugInfo('Camera stream obtained!');
-        console.log('Camera stream obtained:', stream);
+        setDebugInfo('Back camera stream obtained!');
+        console.log('Back camera stream obtained:', stream);
         console.log('Video tracks:', stream.getVideoTracks());
       } catch (e: any) {
         console.error('Camera access failed:', e);
@@ -75,28 +75,31 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
         setDebugInfo('Connecting stream to video element...');
         videoRef.current.srcObject = stream;
         
-        // Wait for video to load
+        // Set streaming immediately since we have the stream
+        setIsStreaming(true);
+        setDebugInfo('✓ Camera stream connected!');
+        
+        // Wait for video to load and play
         videoRef.current.onloadedmetadata = async () => {
           setDebugInfo('Video metadata loaded, starting playback...');
           console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+          console.log('Video readyState:', videoRef.current?.readyState);
           
           try {
             await videoRef.current?.play();
-            setIsStreaming(true);
-            setDebugInfo('✓ Camera active!');
+            setDebugInfo('✓ Camera active and playing!');
             console.log('✓ Camera started successfully');
           } catch (playError) {
             console.error('Play error:', playError);
             setDebugInfo(`Play failed: ${playError}`);
-            setError('Failed to start video playback');
           }
         };
         
         // Fallback: try to play immediately
         try {
           await videoRef.current.play();
-          setIsStreaming(true);
           setDebugInfo('✓ Camera active (immediate)!');
+          console.log('✓ Playing immediately');
         } catch (e) {
           console.log('Immediate play failed, waiting for metadata...');
         }
@@ -193,20 +196,40 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
   if (isStreaming) {
     return (
       <div className="border border-emerald-500/30 bg-gray-900/50 backdrop-blur rounded-lg overflow-hidden">
-        <div className="relative aspect-square bg-black">
+        <div className="relative w-full bg-black" style={{ paddingBottom: '100%' }}>
+          {/* Video element - live camera feed */}
           <video
             ref={videoRef}
             autoPlay
             playsInline
             muted
-            style={{ transform: 'scaleX(-1)' }}
-            className="w-full h-full object-cover"
-            onLoadedMetadata={() => console.log('Video metadata loaded')}
-            onPlay={() => console.log('Video playing')}
-            onError={(e) => console.error('Video error:', e)}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+            onLoadedMetadata={() => {
+              console.log('✓ Video metadata loaded');
+              console.log('Video dimensions:', videoRef.current?.videoWidth, 'x', videoRef.current?.videoHeight);
+              console.log('Has stream:', !!videoRef.current?.srcObject);
+              // Force a repaint
+              if (videoRef.current) {
+                videoRef.current.style.opacity = '0.99';
+                setTimeout(() => {
+                  if (videoRef.current) videoRef.current.style.opacity = '1';
+                }, 10);
+              }
+            }}
+            onPlay={() => console.log('✓ Video playing')}
+            onError={(e) => console.error('✗ Video error:', e)}
           />
-          {/* Grid overlay for alignment */}
-          <div className="absolute inset-0 pointer-events-none">
+          
+          {/* Grid overlay */}
+          <div className="absolute inset-0 pointer-events-none z-10">
             <div className="absolute inset-0 border-4 border-emerald-400/30" />
             <div className="absolute inset-0 grid grid-cols-3 grid-rows-3">
               {[...Array(9)].map((_, i) => (
@@ -216,16 +239,16 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
           </div>
           
           {/* Scan instruction */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/80 rounded-lg backdrop-blur">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/80 rounded-lg backdrop-blur z-20">
             <p className="text-emerald-400 font-mono text-xs text-center font-bold">
-              📸 Position puzzle in frame & tap SCAN
+              📸 Camera Active - Tap SCAN
             </p>
           </div>
           
           {/* Large scan button */}
           <button
             onClick={captureFrame}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-black font-bold rounded-xl transition-all active:scale-95 flex items-center gap-3 shadow-lg shadow-emerald-500/50 text-lg"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-black font-bold rounded-xl transition-all active:scale-95 flex items-center gap-3 shadow-lg shadow-emerald-500/50 text-lg z-20"
           >
             <Camera className="w-6 h-6" />
             SCAN PUZZLE
