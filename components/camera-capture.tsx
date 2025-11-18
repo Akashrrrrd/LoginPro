@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Camera, X } from 'lucide-react';
 
 interface CameraCaptureProps {
@@ -13,9 +13,11 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [cameraStarted, setCameraStarted] = useState(false);
 
   const startCamera = async () => {
     setError(null);
+    setCameraStarted(true);
     
     try {
       // Check if mediaDevices is supported
@@ -109,8 +111,21 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
 
   const clearCapture = () => {
     setCapturedImage(null);
-    stopCamera();
+    // Restart camera instead of stopping
+    startCamera();
   };
+
+  // Auto-start camera on component mount
+  useEffect(() => {
+    if (!cameraStarted && !capturedImage) {
+      startCamera();
+    }
+    
+    // Cleanup on unmount
+    return () => {
+      stopCamera();
+    };
+  }, []);
 
   if (capturedImage) {
     return (
@@ -136,6 +151,7 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
             ref={videoRef}
             autoPlay
             playsInline
+            muted
             className="w-full h-full object-cover"
           />
           {/* Grid overlay for alignment */}
@@ -149,55 +165,67 @@ export default function CameraCapture({ onImageCapture }: CameraCaptureProps) {
           </div>
           
           {/* Scan instruction */}
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/70 rounded-lg">
-            <p className="text-emerald-400 font-mono text-xs text-center">
-              Align puzzle grid within frame
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/80 rounded-lg backdrop-blur">
+            <p className="text-emerald-400 font-mono text-xs text-center font-bold">
+              📸 Position puzzle in frame & tap SCAN
             </p>
           </div>
           
+          {/* Large scan button */}
           <button
             onClick={captureFrame}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-lg transition-all active:scale-95 flex items-center gap-2"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 px-8 py-4 bg-emerald-500 hover:bg-emerald-600 active:bg-emerald-700 text-black font-bold rounded-xl transition-all active:scale-95 flex items-center gap-3 shadow-lg shadow-emerald-500/50 text-lg"
           >
-            <Camera className="w-5 h-5" />
-            CAPTURE
-          </button>
-          
-          <button
-            onClick={stopCamera}
-            className="absolute top-4 right-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-sm rounded-lg transition-colors"
-          >
-            Cancel
+            <Camera className="w-6 h-6" />
+            SCAN PUZZLE
           </button>
         </div>
       </div>
     );
   }
 
+  // Loading state while camera initializes
   return (
     <div className="space-y-4">
-      <button
-        onClick={startCamera}
-        className="w-full py-8 border-2 border-dashed border-emerald-500/50 hover:border-emerald-500 active:border-emerald-400 rounded-lg bg-gray-900/50 hover:bg-gray-900 active:bg-gray-800 transition-all flex flex-col items-center justify-center gap-4 text-emerald-400 font-mono touch-manipulation"
-      >
-        <Camera className="w-12 h-12" />
-        <div className="text-center">
-          <p className="text-lg font-bold">SCAN PUZZLE</p>
-          <p className="text-xs text-emerald-300/60 mt-1">Camera-only mode for system-generated matrices</p>
+      <div className="border border-emerald-500/30 bg-gray-900/50 backdrop-blur rounded-lg overflow-hidden">
+        <div className="relative aspect-square bg-black flex items-center justify-center">
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            className="w-full h-full object-cover opacity-0"
+          />
+          
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-8">
+            <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-emerald-400 font-mono text-sm text-center">
+              Initializing camera...
+            </p>
+            <p className="text-emerald-300/60 font-mono text-xs text-center">
+              Please allow camera permissions when prompted
+            </p>
+          </div>
         </div>
-      </button>
+      </div>
 
       {error && (
         <div className="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
-          <p className="text-red-300 font-mono text-xs text-center">
+          <p className="text-red-300 font-mono text-xs text-center mb-2">
             ⚠️ {error}
           </p>
+          <button
+            onClick={startCamera}
+            className="w-full py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 rounded text-red-300 font-mono text-xs"
+          >
+            Retry Camera Access
+          </button>
         </div>
       )}
 
       <div className="bg-gray-900/30 border border-emerald-500/20 rounded-lg p-4">
         <p className="text-emerald-300/70 font-mono text-xs text-center">
-          📱 Position your device camera over a printed or digital puzzle matrix (3x3, 4x4, or 5x5)
+          📱 Camera will start automatically
         </p>
         <p className="text-emerald-300/50 font-mono text-xs text-center mt-2">
           ⚠️ Requires HTTPS connection for camera access
